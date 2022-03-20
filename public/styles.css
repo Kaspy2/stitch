@@ -1,0 +1,61 @@
+:root {
+    --bg: #3d5169;
+    --fg: #d0e3f9;
+    --em: #c5b78a;
+    --l1: #496d96;
+    --l2: #7598c1;
+    --l3: #a9c2df;
+    --l4: #d2e3f6;
+    --d1: #243750;
+    --d2: #12253d;
+    --d3: #0a1b2f;
+    --d4: #041324;
+}
+
+* {
+    font-family: Tahoma, sans-serif;
+    font-size: 12pt;
+    color: var(--fg);
+}
+
+body {
+    background-color: var(--bg);
+    /* width: 100%; */
+    color: var(--fg);
+}
+
+button,
+label {
+    background-color: var(--l1);
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+}
+
+button:hover,
+label:hover {
+    background-color: var(--l2);
+    cursor: pointer;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.hidden {
+    display: none;
+}
+
+.squareContainer {
+    width: 20vw;
+    height: 20vh;
+}
+
+.squareContainer > img {
+    width: clamp(20px, 20vw, 100%);
+    height: clamp(20px, 20vh, 100%);
+}
