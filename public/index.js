@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     function updateSource() {
         // get uploaded file
         const files = selector.files;
-        if (files.length === 0) {
+        if (files.length === 0 || !validFileType(files[0])) {
             preview.classList.add("hidden");
             submit.disabled = true;
         } else {

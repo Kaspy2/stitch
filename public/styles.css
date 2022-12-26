@@ -81,3 +81,7 @@ input[type="file"] {
     -o-transition: color 0.5s linear;
     transition: color 0.5s linear;
 }
+
+.brand-font {
+    font-family: Tillana;
+}
