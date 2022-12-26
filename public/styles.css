@@ -1,4 +1,4 @@
-:root {
+/* :root {
     --bg: #3d5169;
     --fg: #d0e3f9;
     --em: #c5b78a;
@@ -10,18 +10,26 @@
     --d2: #12253d;
     --d3: #0a1b2f;
     --d4: #041324;
+    --base-font-size: 16pt;
 }
 
 * {
     font-family: Tahoma, sans-serif;
-    font-size: 12pt;
+    font-size: var(--base-font-size);
     color: var(--fg);
 }
 
 body {
     background-color: var(--bg);
-    /* width: 100%; */
     color: var(--fg);
+}
+
+main {
+    padding: 20px;
+}
+
+h1 {
+    font-size: calc(var(--base-font-size)*2);
 }
 
 button,
@@ -44,7 +52,7 @@ label:hover {
 
 input[type="file"] {
     display: none;
-}
+} */
 
 .hidden {
     display: none;
@@ -58,4 +66,18 @@ input[type="file"] {
 .squareContainer > img {
     width: clamp(20px, 20vw, 100%);
     height: clamp(20px, 20vh, 100%);
+}
+
+#dropper .file-cta {
+    -webkit-transition: background-color 0.5s linear;
+    -moz-transition: background-color 0.5s linear;
+    -o-transition: background-color 0.5s linear;
+    transition: background-color 0.5s linear;
+}
+
+#dropper .file-cta > * {
+    -webkit-transition: color 0.5s linear;
+    -moz-transition: color 0.5s linear;
+    -o-transition: color 0.5s linear;
+    transition: color 0.5s linear;
 }

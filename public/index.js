@@ -216,12 +216,14 @@ class PixelArray2D {
 }
 
 document.addEventListener("DOMContentLoaded", function (event) {
+    const dropper = document.getElementById("dropper");
     const selector = document.getElementById("imageSelector");
+    const fileName = document.getElementById("fileName");
     const source = document.getElementById("imageSource");
     const preview = document.getElementById("imagePreview");
     const canvas = document.getElementById("imageCanvas");
     const previewCanvas = document.getElementById("previewCanvas");
-    const numColorsSlider = document.getElementById("numColorsSlider");
+    const numColors = document.getElementById("numColors");
     const submit = document.getElementById("submitButton");
 
     let context = canvas.getContext("2d");
@@ -233,26 +235,57 @@ document.addEventListener("DOMContentLoaded", function (event) {
         imageLoaded = true;
     };
 
+    function activateDropper(ev) {
+        dropper.classList.add("is-warning");
+
+        ev.preventDefault();
+    }
+
+    function deactivateDropper() {
+        dropper.classList.remove("is-warning");
+    }
+
+    function dropHandler(ev) {
+        ev.preventDefault();
+
+        selector.files = ev.dataTransfer.files;
+
+        updateSource();
+
+        deactivateDropper();
+    }
+
+    dropper.addEventListener("drop", dropHandler);
+
+    dropper.addEventListener("dragover", activateDropper);
+    dropper.addEventListener("dragleave", deactivateDropper);
+
     selector.addEventListener("change", updateSource);
     submit.addEventListener("click", processImage);
 
-    var output = document.getElementById("numColorsLabel");
-    output.innerHTML = numColorsSlider.value;
+    numColors.addEventListener("wheel", scrollNumColors);
 
-    numColorsSlider.oninput = function () {
-        output.innerHTML = this.value;
-    };
+    function scrollNumColors(ev) {
+        if (ev.deltaY < 0) {
+            numColors.value = Math.min(100, parseInt(numColors.value) + 1);
+        } else {
+            numColors.value = Math.max(2, parseInt(numColors.value) - 1);
+        }
+    }
 
     function updateSource() {
         // get uploaded file
         const files = selector.files;
         if (files.length === 0) {
             preview.classList.add("hidden");
+            submit.disabled = true;
         } else {
             preview.classList.remove("hidden");
             imageLoaded = false;
             source.src = URL.createObjectURL(files[0]);
             preview.src = URL.createObjectURL(files[0]);
+            fileName.innerText = files[0].name;
+            submit.disabled = false;
         }
     }
 
@@ -279,11 +312,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
         pixels = new PixelArray2D(flatPixels, imgWidth, imgHeight);
 
         // quantize
-        let quantized = pixels.quantize(
-            100,
-            100,
-            numColorsSlider.value
-        ).imageData;
+        let quantized = pixels.quantize(100, 100, numColors.value).imageData;
 
         // show in canvas
         previewContext.clearRect(
