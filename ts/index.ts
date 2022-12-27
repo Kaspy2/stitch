@@ -110,19 +110,6 @@ document.addEventListener("DOMContentLoaded", function () {
         context.drawImage(source, 0, 0);
 
         let imgData = context.getImageData(0, 0, imgWidth, imgHeight);
-        // console.log(imgData);
-        // let flatData = Array.from(imgData.data);
-        // console.log(flatData);
-
-        // console.log("flattening");
-
-        // let flatPixels = new Array<Pixel>();
-
-        // [...Array(Math.ceil(flatData.length / 4)).keys()]
-        //     .map((x) => flatData.slice(x * 4, (x + 1) * 4))
-        //     .forEach((v) => {
-        //         flatPixels.push(new Pixel(...(v as RGBA)));
-        //     });
 
         const myWorker = new Worker("js/worker.js", { type: "module" });
 
