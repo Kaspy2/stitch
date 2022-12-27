@@ -5,11 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Stitch</title>
         <!-- <script defer src="/__/firebase/init.js?useEmulator=true"></script> -->
-        <link rel="stylesheet" href="styles.css" />
         <link
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
         />
+        <link rel="stylesheet" href="styles.css" />
         <script
             defer
             src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"
@@ -120,17 +120,25 @@
                                 alt="Output image."
                             />
                         </div>
+
+                        <progress
+                            id="processingProgress"
+                            class="progress is-small is-primary hidden"
+                            max="100"
+                        >
+                            15%
+                        </progress>
                     </div>
                     <div class="column">
                         Output preview:
                         <div class="squareContainer">
-                            <canvas id="previewCanvas" class="hidden"></canvas>
+                            <canvas id="previewCanvas"></canvas>
                         </div>
                     </div>
                 </div>
             </section>
         </main>
-        <script src="kmeans.js"></script>
-        <script src="index.js"></script>
+        <!-- <script src="js/kmeans.js"></script> -->
+        <script type="module" src="js/index.js"></script>
     </body>
 </html>

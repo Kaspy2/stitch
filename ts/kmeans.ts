@@ -1,13 +1,20 @@
 const MAX_ITERATIONS = 50;
 
-function randomBetween(min, max) {
+type Point = number[];
+type Points = Point[];
+type Label = {
+    points: Points;
+    centroid: Point;
+};
+
+function randomBetween(min: number, max: number) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
-function calcMeanCentroid(dataSet, start, end) {
+function calcMeanCentroid(dataSet: Points, start: number, end: number) {
     const features = dataSet[0].length;
     const n = end - start;
-    let mean = [];
+    let mean = Array<number>();
     for (let i = 0; i < features; i++) {
         mean.push(0);
     }
@@ -19,14 +26,14 @@ function calcMeanCentroid(dataSet, start, end) {
     return mean;
 }
 
-function getRandomCentroidsNaiveSharding(dataset, k) {
+function getRandomCentroidsNaiveSharding(dataset: Points, k: number) {
     // implementation of a variation of naive sharding centroid initialization method
     // (not using sums or sorting, just dividing into k shards and calc mean)
     // https://www.kdnuggets.com/2017/03/naive-sharding-centroid-initialization-method.html
     const numSamples = dataset.length;
     // Divide dataset into k shards:
     const step = Math.floor(numSamples / k);
-    const centroids = [];
+    const centroids = Array<number[]>();
     for (let i = 0; i < k; i++) {
         const start = step * i;
         let end = step * (i + 1);
@@ -38,18 +45,18 @@ function getRandomCentroidsNaiveSharding(dataset, k) {
     return centroids;
 }
 
-function getRandomCentroids(dataset, k) {
+function getRandomCentroids(dataset: Points, k: number) {
     // selects random points as centroids from the dataset
     const numSamples = dataset.length;
-    const centroidsIndex = [];
-    let index;
+    const centroidsIndex = Array<number>();
+    let index: number;
     while (centroidsIndex.length < k) {
         index = randomBetween(0, numSamples);
         if (centroidsIndex.indexOf(index) === -1) {
             centroidsIndex.push(index);
         }
     }
-    const centroids = [];
+    const centroids = Array<number[]>();
     for (let i = 0; i < centroidsIndex.length; i++) {
         const centroid = [...dataset[centroidsIndex[i]]];
         centroids.push(centroid);
@@ -57,7 +64,7 @@ function getRandomCentroids(dataset, k) {
     return centroids;
 }
 
-function compareCentroids(a, b) {
+function compareCentroids(a: number[], b: number[]) {
     for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) {
             return false;
@@ -66,7 +73,11 @@ function compareCentroids(a, b) {
     return true;
 }
 
-function shouldStop(oldCentroids, centroids, iterations) {
+function shouldStop(
+    oldCentroids: Points,
+    centroids: Points,
+    iterations: number
+) {
     if (iterations > MAX_ITERATIONS) {
         return true;
     }
@@ -83,8 +94,8 @@ function shouldStop(oldCentroids, centroids, iterations) {
 }
 
 // Calculate Squared Euclidean Distance
-function getDistanceSQ(a, b) {
-    const diffs = [];
+function getDistanceSQ(a: Point, b: Point) {
+    const diffs = Array<number>();
     for (let i = 0; i < a.length; i++) {
         diffs.push(a[i] - b[i]);
     }
@@ -92,9 +103,9 @@ function getDistanceSQ(a, b) {
 }
 
 // Returns a label for each piece of data in the dataset.
-function getLabels(dataSet, centroids) {
+function getLabels(dataSet: Points, centroids: Points) {
     // prep data structure:
-    const labels = {};
+    const labels = new Map<number, Label>();
     for (let c = 0; c < centroids.length; c++) {
         labels[c] = {
             points: [],
@@ -105,7 +116,9 @@ function getLabels(dataSet, centroids) {
     // Make that centroid the element's label.
     for (let i = 0; i < dataSet.length; i++) {
         const a = dataSet[i];
-        let closestCentroid, closestCentroidIndex, prevDistance;
+        let closestCentroid: Point,
+            closestCentroidIndex: number = 0,
+            prevDistance: number = Infinity;
         for (let j = 0; j < centroids.length; j++) {
             let centroid = centroids[j];
             if (j === 0) {
@@ -128,9 +141,9 @@ function getLabels(dataSet, centroids) {
     return labels;
 }
 
-function getPointsMean(pointList) {
+function getPointsMean(pointList: Points) {
     const totalPoints = pointList.length;
-    const means = [];
+    const means = Array<number>();
     for (let j = 0; j < pointList[0].length; j++) {
         means.push(0);
     }
@@ -144,12 +157,12 @@ function getPointsMean(pointList) {
     return means;
 }
 
-function recalculateCentroids(dataSet, labels, k) {
+function recalculateCentroids(dataSet: Points, labels: Map<number, Label>) {
     // Each centroid is the geometric mean of the points that
     // have that centroid's label. Important: If a centroid is empty (no points have
     // that centroid's label) you should randomly re-initialize it.
-    let newCentroid;
-    const newCentroidList = [];
+    let newCentroid: Point;
+    const newCentroidList = new Array<Point>();
     for (const k in labels) {
         const centroidGroup = labels[k];
         if (centroidGroup.points.length > 0) {
@@ -164,11 +177,13 @@ function recalculateCentroids(dataSet, labels, k) {
     return newCentroidList;
 }
 
-function kmeans(dataset, k, useNaiveSharding = true) {
+function kmeans(dataset: Points, k: number, useNaiveSharding: boolean = true) {
     if (dataset.length && dataset[0].length && dataset.length > k) {
         // Initialize book keeping variables
         let iterations = 0;
-        let oldCentroids, labels, centroids;
+        let oldCentroids = new Array<Point>(),
+            labels = new Map<number, Label>(),
+            centroids = new Array<Point>();
 
         // Initialize centroids randomly
         if (useNaiveSharding) {
@@ -185,10 +200,10 @@ function kmeans(dataset, k, useNaiveSharding = true) {
 
             // Assign labels to each datapoint based on centroids
             labels = getLabels(dataset, centroids);
-            centroids = recalculateCentroids(dataset, labels, k);
+            centroids = recalculateCentroids(dataset, labels);
         }
 
-        const clusters = [];
+        const clusters = new Array<Label>();
         for (let i = 0; i < k; i++) {
             clusters.push(labels[i]);
         }
@@ -203,3 +218,5 @@ function kmeans(dataset, k, useNaiveSharding = true) {
         throw new Error("Invalid dataset");
     }
 }
+
+export { kmeans };

@@ -1,3 +1,5 @@
+import { kmeans } from "./kmeans.js";
+
 const fileTypes = [
     "image/apng",
     "image/bmp",
@@ -11,12 +13,19 @@ const fileTypes = [
     "image/x-icon",
 ];
 
-function validFileType(file) {
+function validFileType(file: File) {
     return fileTypes.includes(file.type);
 }
 
+type RGBA = [number, number, number, number];
+
 class Pixel {
-    constructor(r, g, b, a = 255) {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+
+    constructor(r: number, g: number, b: number, a: number = 255) {
         this.r = Math.floor(r);
         this.g = Math.floor(g);
         this.b = Math.floor(b);
@@ -30,14 +39,20 @@ class Pixel {
     get hash() {
         return `${this.r},${this.g},${this.b},${this.a}`;
     }
+
+    static fromUint8ClampedArray(arr: Uint8ClampedArray) {
+        return new Pixel(...(arr as unknown as RGBA));
+    }
 }
 
 class PixelArray {
-    constructor(...pixels) {
+    pixels: Pixel[];
+
+    constructor(...pixels: Pixel[]) {
         this.pixels = pixels;
     }
 
-    addPixel(pixel) {
+    addPixel(pixel: Pixel) {
         this.pixels.push(pixel);
     }
 
@@ -47,7 +62,7 @@ class PixelArray {
         }
     }
 
-    *getPixelsGrouped(dx) {
+    *getPixelsGrouped(dx: number) {
         for (let i = 0; i < this.pixels.length; i += dx) {
             yield this.pixels.slice(i, i + dx);
         }
@@ -57,13 +72,19 @@ class PixelArray {
         return this.pixels.length;
     }
 
-    slice(start, end) {
+    slice(start: number, end: number) {
         return new PixelArray(...this.pixels.slice(start, end));
+    }
+
+    splice(start: number, deleteCount?: number) {
+        return this.pixels.splice(start, deleteCount);
     }
 }
 
 class PixelArray2D {
-    constructor(pixels, width, height) {
+    rows: PixelArray[];
+
+    constructor(pixels: Pixel[], width: number, height: number) {
         if (width * height != pixels.length) {
             throw new Error("Image dimensions do not match!");
         }
@@ -122,43 +143,66 @@ class PixelArray2D {
         );
     }
 
-    makeDivisible({ x = 0, y = 0, crop = true } = {}) {
-        let copy = this.clone();
+    // makeDivisible({ x = 0, y = 0, crop = true } = {}) {
+    //     let copy = this.clone();
 
+    //     if (x != 0) {
+    //         let rowLength = copy.width;
+    //         let excessX = rowLength % x;
+    //         if (crop) {
+    //             copy.rows = copy.rows.map((row) =>
+    //                 row.slice(0, rowLength - excessX)
+    //             );
+    //         }
+    //     }
+
+    //     if (y != 0) {
+    //         let columnLength = copy.height;
+    //         let excessY = columnLength % y;
+    //         if (crop) {
+    //             copy.rows = copy.rows.slice(0, columnLength - excessY);
+    //         }
+    //     }
+
+    //     return copy;
+    // }
+
+    makeDivisible({ x = 0, y = 0, crop = true } = {}) {
         if (x != 0) {
-            let rowLength = copy.width;
+            let rowLength = this.width;
             let excessX = rowLength % x;
             if (crop) {
-                copy.rows = copy.rows.map((row) =>
-                    row.slice(0, rowLength - excessX)
-                );
+                for (const row of this.rows) {
+                    row.splice(rowLength - excessX);
+                }
             }
         }
 
         if (y != 0) {
-            let columnLength = copy.height;
+            let columnLength = this.height;
             let excessY = columnLength % y;
             if (crop) {
-                copy.rows = copy.rows.slice(0, columnLength - excessY);
+                this.rows.splice(columnLength - excessY);
             }
         }
-
-        return copy;
     }
 
-    groupPixels(dx, dy) {
-        let copy = this.makeDivisible({ x: dx, y: dy });
+    groupPixels(dx: number, dy: number) {
+        this.makeDivisible({ x: dx, y: dy });
 
-        let groups = [];
-        for (let y = 0; y < copy.height; y += dy) {
-            let currentRow = [];
-            let rowGroup = copy.rows.slice(y, y + dy);
+        let groups = Array<PixelArray2D[]>();
+        for (let y = 0; y < this.height; y += dy) {
+            let currentRow = Array<PixelArray2D>();
+            let rowGroup = this.rows.slice(y, y + dy);
             let groupedRows = rowGroup.map((row) => row.getPixelsGrouped(dx));
 
-            for (let x = 0; x < copy.width; x += dx) {
-                let currentGroup = [];
+            for (let x = 0; x < this.width; x += dx) {
+                let currentGroup = Array<Pixel[]>();
                 for (const groupedRow of groupedRows) {
-                    currentGroup.push(groupedRow.next().value);
+                    let gr = groupedRow.next();
+                    if (!gr.done) {
+                        currentGroup.push(gr.value as Pixel[]);
+                    }
                 }
                 currentRow.push(new PixelArray2D(currentGroup.flat(), dx, dy));
             }
@@ -168,7 +212,7 @@ class PixelArray2D {
         return groups;
     }
 
-    quantize(width, height, numColors) {
+    quantize(width: number, height: number, numColors: number) {
         let dx = Math.floor(this.width / width);
         let dy = Math.floor(this.height / height);
         let groups = this.groupPixels(dx, dy);
@@ -176,7 +220,7 @@ class PixelArray2D {
             row.map((pixelGroup) => pixelGroup.meanPixel)
         );
 
-        let flattennedColors = [];
+        let flattennedColors = Array<number[]>();
 
         for (const row of means) {
             for (const pixel of row) {
@@ -188,9 +232,9 @@ class PixelArray2D {
         let colorMap = {};
 
         for (const cluster of colorClusters.clusters) {
-            let centroid = new Pixel(...cluster.centroid);
+            let centroid = new Pixel(...(cluster.centroid as RGBA));
             for (const point of cluster.points) {
-                colorMap[new Pixel(...point).hash] = centroid;
+                colorMap[new Pixel(...(point as RGBA)).hash] = centroid;
             }
         }
 
@@ -215,27 +259,30 @@ class PixelArray2D {
     }
 }
 
-document.addEventListener("DOMContentLoaded", function (event) {
-    const dropper = document.getElementById("dropper");
-    const selector = document.getElementById("imageSelector");
-    const fileName = document.getElementById("fileName");
-    const source = document.getElementById("imageSource");
-    const preview = document.getElementById("imagePreview");
-    const canvas = document.getElementById("imageCanvas");
-    const previewCanvas = document.getElementById("previewCanvas");
-    const numColors = document.getElementById("numColors");
-    const submit = document.getElementById("submitButton");
+document.addEventListener("DOMContentLoaded", function () {
+    const dropper = document.getElementById("dropper") as HTMLDivElement;
+    const selector = document.getElementById(
+        "imageSelector"
+    ) as HTMLInputElement;
+    const fileName = document.getElementById("fileName") as HTMLSpanElement;
+    const source = document.getElementById("imageSource") as HTMLImageElement;
+    const preview = document.getElementById("imagePreview") as HTMLImageElement;
+    const canvas = document.getElementById("imageCanvas") as HTMLCanvasElement;
+    const previewCanvas = document.getElementById(
+        "previewCanvas"
+    ) as HTMLCanvasElement;
+    const numColors = document.getElementById("numColors") as HTMLInputElement;
+    const submit = document.getElementById("submitButton") as HTMLButtonElement;
+    const progress = document.getElementById(
+        "processingProgress"
+    ) as HTMLProgressElement;
 
-    let context = canvas.getContext("2d");
-    let previewContext = previewCanvas.getContext("2d");
+    let context = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let previewContext = previewCanvas.getContext(
+        "2d"
+    ) as CanvasRenderingContext2D;
 
-    let imageLoaded = false;
-
-    source.onload = function () {
-        imageLoaded = true;
-    };
-
-    function activateDropper(ev) {
+    function activateDropper(ev: Event) {
         dropper.classList.add("is-warning");
 
         ev.preventDefault();
@@ -245,10 +292,10 @@ document.addEventListener("DOMContentLoaded", function (event) {
         dropper.classList.remove("is-warning");
     }
 
-    function dropHandler(ev) {
+    function dropHandler(ev: DragEvent) {
         ev.preventDefault();
 
-        selector.files = ev.dataTransfer.files;
+        selector.files = ev.dataTransfer?.files || new FileList();
 
         updateSource();
 
@@ -265,23 +312,28 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
     numColors.addEventListener("wheel", scrollNumColors);
 
-    function scrollNumColors(ev) {
+    function scrollNumColors(ev: WheelEvent) {
         if (ev.deltaY < 0) {
-            numColors.value = Math.min(100, parseInt(numColors.value) + 1);
+            numColors.value = Math.min(
+                100,
+                parseInt(numColors.value) + 1
+            ).toString();
         } else {
-            numColors.value = Math.max(2, parseInt(numColors.value) - 1);
+            numColors.value = Math.max(
+                2,
+                parseInt(numColors.value) - 1
+            ).toString();
         }
     }
 
     function updateSource() {
         // get uploaded file
-        const files = selector.files;
+        const files = selector.files || [];
         if (files.length === 0 || !validFileType(files[0])) {
             preview.classList.add("hidden");
             submit.disabled = true;
         } else {
             preview.classList.remove("hidden");
-            imageLoaded = false;
             source.src = URL.createObjectURL(files[0]);
             preview.src = URL.createObjectURL(files[0]);
             fileName.innerText = files[0].name;
@@ -289,9 +341,9 @@ document.addEventListener("DOMContentLoaded", function (event) {
         }
     }
 
-    function processImage() {
+    async function processImage() {
         console.log("Processing image");
-        // while (!imageLoaded) {} //wait for image to load
+        progress.classList.remove("hidden");
 
         let imgWidth = source.width;
         let imgHeight = source.height;
@@ -302,17 +354,43 @@ document.addEventListener("DOMContentLoaded", function (event) {
         context.drawImage(source, 0, 0);
 
         let imgData = context.getImageData(0, 0, imgWidth, imgHeight);
-        console.log(imgData);
-        let flatData = imgData.data;
-        flatPixels = [];
-        for (let i = 0; i < flatData.length; i += 4) {
-            flatPixels.push(new Pixel(...flatData.slice(i, i + 4)));
-        }
+        // console.log(imgData);
+        // let flatData = Array.from(imgData.data);
+        // console.log(flatData);
 
-        pixels = new PixelArray2D(flatPixels, imgWidth, imgHeight);
+        // console.log("flattening");
+
+        // let flatPixels = new Array<Pixel>();
+
+        // [...Array(Math.ceil(flatData.length / 4)).keys()]
+        //     .map((x) => flatData.slice(x * 4, (x + 1) * 4))
+        //     .forEach((v) => {
+        //         flatPixels.push(new Pixel(...(v as RGBA)));
+        //     });
+
+        let flatData = imgData.data;
+
+        let flatPixels = [...Array(Math.ceil(flatData.length / 4)).keys()].map(
+            (x) =>
+                new Pixel(
+                    flatData[x * 4],
+                    flatData[x * 4 + 1],
+                    flatData[x * 4 + 2],
+                    flatData[x * 4 + 3]
+                )
+        );
+
+        let pixels = new PixelArray2D(flatPixels, imgWidth, imgHeight);
+
+        console.log(pixels);
 
         // quantize
-        let quantized = pixels.quantize(100, 100, numColors.value).imageData;
+        let quantized = pixels.quantize(
+            100,
+            100,
+            parseInt(numColors.value)
+        ).imageData;
+        console.log("quantized");
 
         // show in canvas
         previewContext.clearRect(
@@ -322,7 +400,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
             previewCanvas.height
         );
         previewContext.putImageData(quantized, 0, 0);
-        previewCanvas.classList.remove("hidden");
+        progress.classList.add("hidden");
     }
 });
 
