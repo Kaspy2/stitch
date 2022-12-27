@@ -136,8 +136,11 @@ document.addEventListener("DOMContentLoaded", function () {
             );
             previewContext.putImageData(e.data as ImageData, 0, 0);
             progress.classList.add("hidden");
+
+            submit.disabled = false;
         };
 
+        submit.disabled = true;
         myWorker.postMessage([
             imgData.data,
             imgWidth,
