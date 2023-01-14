@@ -19,6 +19,7 @@ onmessage = (e) => {
     let pixels = new PixelArray2D(flatPixels, imgWidth, imgHeight);
 
     // quantize
+    // TODO: parametrize this
     let quantized = pixels.quantize(100, 100, numColors).imageData;
 
     postMessage(quantized);

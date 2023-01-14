@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const preview = document.getElementById("imagePreview");
     const canvas = document.getElementById("imageCanvas");
     const previewCanvas = document.getElementById("previewCanvas");
+    const outputImagePreview = document.getElementById("outputImagePreview");
     const numColors = document.getElementById("numColors");
     const submit = document.getElementById("submitButton");
     const progress = document.getElementById("processingProgress");
@@ -85,12 +86,18 @@ document.addEventListener("DOMContentLoaded", function () {
             let imgHeight = source.height;
             canvas.width = imgWidth;
             canvas.height = imgHeight;
+            previewCanvas.width = 100;
+            previewCanvas.height = 100;
+            outputImagePreview.width = imgWidth;
+            outputImagePreview.height = imgHeight;
             context.drawImage(source, 0, 0);
             let imgData = context.getImageData(0, 0, imgWidth, imgHeight);
             const myWorker = new Worker("js/worker.js", { type: "module" });
             myWorker.onmessage = (e) => {
                 previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
                 previewContext.putImageData(e.data, 0, 0);
+                const img = previewCanvas.toDataURL("image/png");
+                outputImagePreview.src = img;
                 progress.classList.add("hidden");
                 submit.disabled = false;
             };

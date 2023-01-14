@@ -27,6 +27,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const previewCanvas = document.getElementById(
         "previewCanvas"
     ) as HTMLCanvasElement;
+    const outputImagePreview = document.getElementById(
+        "outputImagePreview"
+    ) as HTMLImageElement;
     const numColors = document.getElementById("numColors") as HTMLInputElement;
     const submit = document.getElementById("submitButton") as HTMLButtonElement;
     const progress = document.getElementById(
@@ -107,6 +110,13 @@ document.addEventListener("DOMContentLoaded", function () {
         canvas.width = imgWidth;
         canvas.height = imgHeight;
 
+        // TODO: parametrize this
+        previewCanvas.width = 100;
+        previewCanvas.height = 100;
+
+        outputImagePreview.width = imgWidth;
+        outputImagePreview.height = imgHeight;
+
         context.drawImage(source, 0, 0);
 
         let imgData = context.getImageData(0, 0, imgWidth, imgHeight);
@@ -122,6 +132,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 previewCanvas.height
             );
             previewContext.putImageData(e.data as ImageData, 0, 0);
+
+            const img = previewCanvas.toDataURL("image/png");
+            outputImagePreview.src = img;
+
             progress.classList.add("hidden");
 
             submit.disabled = false;

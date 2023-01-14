@@ -74,8 +74,6 @@
                             </label>
                         </div>
 
-                        <canvas id="imageCanvas" class="hidden"></canvas>
-
                         <div class="block level">
                             <div class="field is-horizontal level-left mb-0">
                                 <div class="field-label level-item">
@@ -122,9 +120,11 @@
                             <img
                                 id="imagePreview"
                                 class="hidden"
-                                alt="Output image."
+                                alt="Input image."
                             />
                         </div>
+
+                        <canvas id="imageCanvas" class="hidden"></canvas>
 
                         <progress
                             id="processingProgress"
@@ -137,7 +137,8 @@
                     <div class="column">
                         <div class="block">Output preview:</div>
                         <div class="block">
-                            <canvas id="previewCanvas"></canvas>
+                            <canvas id="previewCanvas" class="hidden"></canvas>
+                            <img id="outputImagePreview" alt="Output image." />
                         </div>
                     </div>
                 </div>
