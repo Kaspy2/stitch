@@ -1,3 +1,5 @@
+import { PixelArt } from "./pixelart.js";
+
 const fileTypes = [
     "image/apng",
     "image/bmp",
@@ -11,8 +13,18 @@ const fileTypes = [
     "image/x-icon",
 ];
 
+const defaultRes = 1080;
+
 function validFileType(file: File) {
     return fileTypes.includes(file.type);
+}
+
+function show(el: HTMLElement) {
+    el.classList.remove("hidden");
+}
+
+function hide(el: HTMLElement) {
+    el.classList.add("hidden");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -100,11 +112,12 @@ document.addEventListener("DOMContentLoaded", function () {
         // get uploaded file
         const files = selector.files || [];
         if (files.length === 0 || !validFileType(files[0])) {
-            preview.classList.add("hidden");
+            hide(preview);
+            hide(outputImagePreview);
             submit.disabled = true;
             procParams.disabled = true;
         } else {
-            preview.classList.remove("hidden");
+            show(preview);
             source.src = URL.createObjectURL(files[0]);
             preview.src = URL.createObjectURL(files[0]);
             fileName.innerText = files[0].name;
@@ -115,7 +128,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function processImage() {
         console.log("Processing image");
-        progress.classList.remove("hidden");
+        show(progress);
+        hide(outputImagePreview);
 
         let imgWidth = source.width;
         let imgHeight = source.height;
@@ -126,8 +140,13 @@ document.addEventListener("DOMContentLoaded", function () {
         canvas.width = imgWidth;
         canvas.height = imgHeight;
 
-        previewCanvas.width = outputWidth;
-        previewCanvas.height = outputHeight;
+        let scaleX = defaultRes / outputWidth;
+        let scaleY = defaultRes / outputHeight;
+
+        let avgScale = Math.ceil((scaleX + scaleY) / 2);
+
+        previewCanvas.width = avgScale * outputWidth;
+        previewCanvas.height = avgScale * outputHeight;
 
         outputImagePreview.width = imgWidth;
         outputImagePreview.height = imgHeight;
@@ -146,12 +165,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 previewCanvas.width,
                 previewCanvas.height
             );
-            previewContext.putImageData(e.data as ImageData, 0, 0);
+            // previewContext.putImageData(e.data as ImageData, 0, 0);
+
+            let pixelArt = new PixelArt(previewContext, avgScale);
+            pixelArt.setPixels(e.data as ImageData);
 
             const img = previewCanvas.toDataURL("image/png");
             outputImagePreview.src = img;
 
-            progress.classList.add("hidden");
+            show(outputImagePreview);
+            hide(progress);
 
             submit.disabled = false;
         };
@@ -168,6 +191,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// TODO: hide preview image and submit button until an image is selected
-// TODO: validate image on select
+// TODO: add aspect ratio button functionality
 // TODO: maybe handle multiple images
+// TODO: update groupPixels to use makeDivisible (makeDivisible should insert data not remove)

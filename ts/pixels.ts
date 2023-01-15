@@ -69,6 +69,9 @@ class PixelArray2D {
 
     constructor(pixels: Pixel[], width: number, height: number) {
         if (width * height != pixels.length) {
+            console.log(width, height);
+            console.log(width * height);
+            console.log(pixels.length);
             throw new Error("Image dimensions do not match!");
         }
         this.rows = [];
@@ -150,36 +153,44 @@ class PixelArray2D {
     //     return copy;
     // }
 
-    makeDivisible({ x = 0, y = 0, crop = true } = {}) {
+    makeDivisible({ x = 0, y = 0 } = {}) {
+        throw new Error("Not implemented!");
+
         if (x != 0) {
             let rowLength = this.width;
             let excessX = rowLength % x;
-            if (crop) {
-                for (const row of this.rows) {
-                    row.splice(rowLength - excessX);
-                }
+
+            // TODO: fix bug here
+            for (let i = 0; i < this.rows.length; i++) {
+                this.rows[i].splice(rowLength - excessX);
             }
+            // for (const row of this.rows) {
+            //     row.splice(rowLength - excessX);
+            // }
         }
 
         if (y != 0) {
             let columnLength = this.height;
             let excessY = columnLength % y;
-            if (crop) {
-                this.rows.splice(columnLength - excessY);
-            }
+
+            console.log("excessY", excessY);
+
+            this.rows.splice(columnLength - excessY);
         }
+
+        // TODO: instead of removing rows and columns, insert copies
     }
 
     groupPixels(dx: number, dy: number) {
-        this.makeDivisible({ x: dx, y: dy });
+        // this.makeDivisible({ x: dx, y: dy });
 
         let groups = Array<PixelArray2D[]>();
-        for (let y = 0; y < this.height; y += dy) {
+        for (let y = 0; y + dy <= this.height; y += dy) {
             let currentRow = Array<PixelArray2D>();
             let rowGroup = this.rows.slice(y, y + dy);
             let groupedRows = rowGroup.map((row) => row.getPixelsGrouped(dx));
 
-            for (let x = 0; x < this.width; x += dx) {
+            for (let x = 0; x + dx <= this.width; x += dx) {
                 let currentGroup = Array<Pixel[]>();
                 for (const groupedRow of groupedRows) {
                     let gr = groupedRow.next();

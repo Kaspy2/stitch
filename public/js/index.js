@@ -7,6 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { PixelArt } from "./pixelart.js";
 const fileTypes = [
     "image/apng",
     "image/bmp",
@@ -19,8 +20,15 @@ const fileTypes = [
     "image/webp",
     "image/x-icon",
 ];
+const defaultRes = 1080;
 function validFileType(file) {
     return fileTypes.includes(file.type);
+}
+function show(el) {
+    el.classList.remove("hidden");
+}
+function hide(el) {
+    el.classList.add("hidden");
 }
 document.addEventListener("DOMContentLoaded", function () {
     const dropper = document.getElementById("dropper");
@@ -75,12 +83,13 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateSource() {
         const files = selector.files || [];
         if (files.length === 0 || !validFileType(files[0])) {
-            preview.classList.add("hidden");
+            hide(preview);
+            hide(outputImagePreview);
             submit.disabled = true;
             procParams.disabled = true;
         }
         else {
-            preview.classList.remove("hidden");
+            show(preview);
             source.src = URL.createObjectURL(files[0]);
             preview.src = URL.createObjectURL(files[0]);
             fileName.innerText = files[0].name;
@@ -91,15 +100,19 @@ document.addEventListener("DOMContentLoaded", function () {
     function processImage() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log("Processing image");
-            progress.classList.remove("hidden");
+            show(progress);
+            hide(outputImagePreview);
             let imgWidth = source.width;
             let imgHeight = source.height;
             let outputWidth = parseInt(outWidth.value);
             let outputHeight = parseInt(outHeight.value);
             canvas.width = imgWidth;
             canvas.height = imgHeight;
-            previewCanvas.width = outputWidth;
-            previewCanvas.height = outputHeight;
+            let scaleX = defaultRes / outputWidth;
+            let scaleY = defaultRes / outputHeight;
+            let avgScale = Math.ceil((scaleX + scaleY) / 2);
+            previewCanvas.width = avgScale * outputWidth;
+            previewCanvas.height = avgScale * outputHeight;
             outputImagePreview.width = imgWidth;
             outputImagePreview.height = imgHeight;
             context.drawImage(source, 0, 0);
@@ -107,10 +120,12 @@ document.addEventListener("DOMContentLoaded", function () {
             const myWorker = new Worker("js/worker.js", { type: "module" });
             myWorker.onmessage = (e) => {
                 previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-                previewContext.putImageData(e.data, 0, 0);
+                let pixelArt = new PixelArt(previewContext, avgScale);
+                pixelArt.setPixels(e.data);
                 const img = previewCanvas.toDataURL("image/png");
                 outputImagePreview.src = img;
-                progress.classList.add("hidden");
+                show(outputImagePreview);
+                hide(progress);
                 submit.disabled = false;
             };
             submit.disabled = true;
