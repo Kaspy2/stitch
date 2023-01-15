@@ -32,8 +32,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const previewCanvas = document.getElementById("previewCanvas");
     const outputImagePreview = document.getElementById("outputImagePreview");
     const numColors = document.getElementById("numColors");
+    const outWidth = document.getElementById("outWidth");
+    const outHeight = document.getElementById("outHeight");
     const submit = document.getElementById("submitButton");
     const progress = document.getElementById("processingProgress");
+    const procParams = document.getElementById("procParams");
     let context = canvas.getContext("2d");
     let previewContext = previewCanvas.getContext("2d");
     function activateDropper(ev) {
@@ -55,20 +58,26 @@ document.addEventListener("DOMContentLoaded", function () {
     dropper.addEventListener("dragleave", deactivateDropper);
     selector.addEventListener("change", updateSource);
     submit.addEventListener("click", processImage);
-    numColors.addEventListener("wheel", scrollNumColors);
-    function scrollNumColors(ev) {
-        if (ev.deltaY < 0) {
-            numColors.value = Math.min(100, parseInt(numColors.value) + 1).toString();
-        }
-        else {
-            numColors.value = Math.max(2, parseInt(numColors.value) - 1).toString();
-        }
+    numColors.addEventListener("wheel", scrollInput(numColors, 2, 100, 1));
+    outWidth.addEventListener("wheel", scrollInput(outWidth, 10, 500, 20));
+    outHeight.addEventListener("wheel", scrollInput(outHeight, 10, 500, 20));
+    function scrollInput(el, min, max, step) {
+        return (ev) => {
+            ev.preventDefault();
+            if (ev.deltaY < 0) {
+                el.value = Math.min(max, parseInt(el.value) + step).toString();
+            }
+            else {
+                el.value = Math.max(min, parseInt(el.value) - step).toString();
+            }
+        };
     }
     function updateSource() {
         const files = selector.files || [];
         if (files.length === 0 || !validFileType(files[0])) {
             preview.classList.add("hidden");
             submit.disabled = true;
+            procParams.disabled = true;
         }
         else {
             preview.classList.remove("hidden");
@@ -76,6 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
             preview.src = URL.createObjectURL(files[0]);
             fileName.innerText = files[0].name;
             submit.disabled = false;
+            procParams.disabled = false;
         }
     }
     function processImage() {
@@ -84,10 +94,12 @@ document.addEventListener("DOMContentLoaded", function () {
             progress.classList.remove("hidden");
             let imgWidth = source.width;
             let imgHeight = source.height;
+            let outputWidth = parseInt(outWidth.value);
+            let outputHeight = parseInt(outHeight.value);
             canvas.width = imgWidth;
             canvas.height = imgHeight;
-            previewCanvas.width = 100;
-            previewCanvas.height = 100;
+            previewCanvas.width = outputWidth;
+            previewCanvas.height = outputHeight;
             outputImagePreview.width = imgWidth;
             outputImagePreview.height = imgHeight;
             context.drawImage(source, 0, 0);
@@ -107,6 +119,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 imgWidth,
                 imgHeight,
                 parseInt(numColors.value),
+                outputWidth,
+                outputHeight,
             ]);
         });
     }

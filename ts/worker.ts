@@ -5,6 +5,8 @@ onmessage = (e) => {
     let imgWidth = e.data[1] as number;
     let imgHeight = e.data[2] as number;
     let numColors = e.data[3] as number;
+    let outWidth = e.data[4] as number;
+    let outHeight = e.data[5] as number;
 
     let flatPixels = [...Array(Math.ceil(flatData.length / 4)).keys()].map(
         (x) =>
@@ -19,8 +21,7 @@ onmessage = (e) => {
     let pixels = new PixelArray2D(flatPixels, imgWidth, imgHeight);
 
     // quantize
-    // TODO: parametrize this
-    let quantized = pixels.quantize(100, 100, numColors).imageData;
+    let quantized = pixels.quantize(outWidth, outHeight, numColors).imageData;
 
     postMessage(quantized);
 };

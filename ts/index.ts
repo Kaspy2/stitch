@@ -31,10 +31,16 @@ document.addEventListener("DOMContentLoaded", function () {
         "outputImagePreview"
     ) as HTMLImageElement;
     const numColors = document.getElementById("numColors") as HTMLInputElement;
+    const outWidth = document.getElementById("outWidth") as HTMLInputElement;
+    const outHeight = document.getElementById("outHeight") as HTMLInputElement;
     const submit = document.getElementById("submitButton") as HTMLButtonElement;
     const progress = document.getElementById(
         "processingProgress"
     ) as HTMLProgressElement;
+
+    const procParams = document.getElementById(
+        "procParams"
+    ) as HTMLFieldSetElement;
 
     let context = canvas.getContext("2d") as CanvasRenderingContext2D;
     let previewContext = previewCanvas.getContext(
@@ -69,20 +75,25 @@ document.addEventListener("DOMContentLoaded", function () {
     selector.addEventListener("change", updateSource);
     submit.addEventListener("click", processImage);
 
-    numColors.addEventListener("wheel", scrollNumColors);
+    // numColors.addEventListener("wheel", scrollNumColors);
+    numColors.addEventListener("wheel", scrollInput(numColors, 2, 100, 1));
+    outWidth.addEventListener("wheel", scrollInput(outWidth, 10, 500, 20));
+    outHeight.addEventListener("wheel", scrollInput(outHeight, 10, 500, 20));
 
-    function scrollNumColors(ev: WheelEvent) {
-        if (ev.deltaY < 0) {
-            numColors.value = Math.min(
-                100,
-                parseInt(numColors.value) + 1
-            ).toString();
-        } else {
-            numColors.value = Math.max(
-                2,
-                parseInt(numColors.value) - 1
-            ).toString();
-        }
+    function scrollInput(
+        el: HTMLInputElement,
+        min: number,
+        max: number,
+        step: number
+    ) {
+        return (ev: WheelEvent) => {
+            ev.preventDefault();
+            if (ev.deltaY < 0) {
+                el.value = Math.min(max, parseInt(el.value) + step).toString();
+            } else {
+                el.value = Math.max(min, parseInt(el.value) - step).toString();
+            }
+        };
     }
 
     function updateSource() {
@@ -91,12 +102,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (files.length === 0 || !validFileType(files[0])) {
             preview.classList.add("hidden");
             submit.disabled = true;
+            procParams.disabled = true;
         } else {
             preview.classList.remove("hidden");
             source.src = URL.createObjectURL(files[0]);
             preview.src = URL.createObjectURL(files[0]);
             fileName.innerText = files[0].name;
             submit.disabled = false;
+            procParams.disabled = false;
         }
     }
 
@@ -107,12 +120,14 @@ document.addEventListener("DOMContentLoaded", function () {
         let imgWidth = source.width;
         let imgHeight = source.height;
 
+        let outputWidth = parseInt(outWidth.value);
+        let outputHeight = parseInt(outHeight.value);
+
         canvas.width = imgWidth;
         canvas.height = imgHeight;
 
-        // TODO: parametrize this
-        previewCanvas.width = 100;
-        previewCanvas.height = 100;
+        previewCanvas.width = outputWidth;
+        previewCanvas.height = outputHeight;
 
         outputImagePreview.width = imgWidth;
         outputImagePreview.height = imgHeight;
@@ -147,6 +162,8 @@ document.addEventListener("DOMContentLoaded", function () {
             imgWidth,
             imgHeight,
             parseInt(numColors.value),
+            outputWidth,
+            outputHeight,
         ]);
     }
 });
