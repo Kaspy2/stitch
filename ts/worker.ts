@@ -22,6 +22,11 @@ onmessage = (e) => {
 
     // quantize
     let quantized = pixels.quantize(outWidth, outHeight, numColors).imageData;
+    // Uncaught Error: Image dimensions do not match! -> when using anything not jpg
+    // at new PixelArray2D (pixels.ts:72:19)
+    // at PixelArray2D.groupPixels (pixels.ts:190:33)
+    // at PixelArray2D.quantize (pixels.ts:201:27)
+    // at onmessage (worker.ts:23:28)
 
     postMessage(quantized);
 };
